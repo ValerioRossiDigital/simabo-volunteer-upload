@@ -12,7 +12,11 @@ di **staging**. I byte del file **non passano da n8n**: n8n apre solo una
 | Pagina live | https://valeriorossidigital.github.io/simabo-volunteer-upload/ |
 | Repo | https://github.com/ValerioRossiDigital/simabo-volunteer-upload (pubblico) |
 | Pagina form | `index.html` (questo folder) |
+| Embed WordPress | `wordpress-embed.html` — iframe + auto-altezza, per pagina `simabo.org` |
 | Portiere sessioni | n8n `Simabo - Drive Upload Session (resumable)` — ID `xYv0Z8bsuBeyr7u6` |
+
+Il repo è pubblico ma **non contiene segreti**: la credenziale Google vive in n8n,
+la pagina espone solo l'URL del webhook (già pubblico di suo).
 
 ## Flusso
 
@@ -38,42 +42,57 @@ Le **immagini** vengono ottimizzate lato browser prima dell'upload (lato lungo m
 
 ## Setup
 
-### 1. n8n
-1. Apri il workflow `Simabo - Drive Upload Session (resumable)`.
-2. Nodo **Init Resumable Session** → assegna la credenziale **Google Drive OAuth2**.
-   - La credenziale deve avere lo scope `drive` (o `drive.file`); se serve, ri-autorizza.
-3. Stesso nodo → **Body (JSON)**: sostituisci `PASTE_STAGING_FOLDER_ID` con l'ID
-   della cartella STAGING di Drive (lo trovi nell'URL della cartella dopo `/folders/`).
-4. **Attiva** il workflow e copia il **Production URL** del webhook.
+### 1. n8n (già configurato)
+1. Workflow `Simabo - Drive Upload Session (resumable)`, **attivo**.
+2. Nodo **Init Resumable Session**: credenziale **Google Drive OAuth2** (scope `drive`)
+   assegnata; nel **Body (JSON)** il `parents` punta alla cartella STAGING
+   (folder ID `1zZXFmzpiTFAZEt2PkZsuZNPEQrFklPya`).
+3. Webhook: `https://n8n.gorillatribe.net/webhook/simabo-drive-session`.
+4. **Settings → Error Workflow** = sé stesso (serve per far scattare l'email d'errore).
 
-### 2. Pagina
-1. In `index.html`, imposta `WEBHOOK_URL` col Production URL del webhook.
-2. Ospita la pagina (una delle due):
-   - **GitHub Pages** (come `simabo-animal-cards`): push in un repo, Pages da `main`.
-   - **Pagina WordPress**: incolla l'HTML in un blocco Custom HTML / snippet.
-3. Dai il link ai volontari.
+> Il nodo webhook deve restare **Enabled**: se disabilitato, il form prende 404.
+
+### 2. Pagina (GitHub Pages)
+`WEBHOOK_URL` in `index.html` è già impostato. Deploy automatico: ogni push su
+`main` aggiorna la pagina live in ~1 min (GitHub Pages da `main`, root).
+
+### 3. Embed su WordPress (`simabo.org`)
+La pagina live è incorporata via **iframe** in una pagina WordPress:
+1. Nuova pagina WP → widget Elementor **HTML** (o blocco Gutenberg HTML personalizzato).
+2. Incolla tutto il contenuto di `wordpress-embed.html`.
+3. Pubblica. L'iframe si **auto-dimensiona** (la pagina invia la sua altezza via
+   `postMessage`, il listener nello snippet regola l'iframe → niente scrollbar interna).
+4. Se i dati sembrano vecchi: svuota la cache **LiteSpeed** per quella pagina.
+
+Quando è dentro l'iframe la pagina è "nuda" (niente logo/sfondo/intro, sfondo
+trasparente): l'header lo dà WordPress.
+
+## Monitoraggio errori
+
+Il workflow n8n ha un ramo **Error Trigger → Gmail** che manda un'email a
+`simabo.marketing@gmail.com` quando un'esecuzione fallisce (es. token Drive scaduto,
+folder ID errato). Richiede che **Settings → Error Workflow** del workflow punti a
+sé stesso. Nota: un batch di N file falliti = N email.
 
 ## Test locale
 
 ```bash
 cd simabo/volunteer-upload
-python3 -m http.server 8080
-# apri http://localhost:8080
+python3 -m http.server 8080   # apri http://localhost:8080 (non file:// → CORS)
 ```
 
-## Caveat da verificare al primo test — CORS sul PUT
+## Note tecniche
 
-Il browser fa il **PUT diretto** all'`uploadUrl` di Google. L'endpoint
-`googleapis.com/upload/...` supporta CORS, quindi in teoria funziona da qualsiasi
-origin. **Va confermato dal vivo**: se il PUT viene bloccato da CORS, le opzioni sono:
-
-- servire la pagina da un dominio Google-friendly, oppure
-- passare a upload **chunked** con header `Content-Range` (stesso session URI), oppure
-- fallback: proxy del PUT via n8n (ma reintroduce il peso su n8n — da evitare).
-
-## Limiti attuali / possibili migliorie
-
-- Upload **sequenziale** (un file alla volta) — semplice e stabile su rete mobile.
-- PUT in **un colpo solo**: se cade la rete a metà, quel file riparte da zero.
-  Per veri "resume" su file enormi si può passare a chunk da ~8–16 MB con `Content-Range`.
+- **CORS sul PUT (confermato)**: il browser consegna i byte a Google, ma la *lettura*
+  della risposta di Google è bloccata da CORS. È **innocuo**: il file è già salvato
+  quando il body è stato inviato. La pagina considera l'upload riuscito su
+  `xhr.upload.onload` (byte consegnati), ignorando la risposta illeggibile → niente
+  falsi errori rossi.
+- **Immagini** ottimizzate lato browser (max 2560px lato lungo, JPEG q0.85; HEIC→JPEG
+  via `heic2any` caricata solo quando serve). Fail-safe: se la compressione fallisce,
+  carica l'originale. **Video** intatti (transcodifica pesante → rimandata alla fase-2).
+- Upload **sequenziale** (un file alla volta) — stabile su rete mobile.
+- PUT in **un colpo solo**: se cade la rete a metà, quel file riparte da zero. Per veri
+  "resume" su file enormi si può passare a chunk da ~8–16 MB con `Content-Range`.
 - Nessuna autenticazione sul form: chiunque abbia il link può caricare nella cartella staging.
+- `simabo-logo-white.webp` resta nel repo ma non è più referenziato (logo dato da WP).
