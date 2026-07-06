@@ -338,6 +338,18 @@
   });
 
   $('again').addEventListener('click', () => location.reload());
+
+  // When embedded in an iframe (e.g. a WordPress page), report our height so
+  // the parent can resize the iframe to fit the content (no inner scrollbar).
+  function reportHeight(){
+    const h = document.documentElement.scrollHeight;
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({ simaboUploadHeight: h }, '*');
+    }
+  }
+  window.addEventListener('load', reportHeight);
+  window.addEventListener('resize', reportHeight);
+  if(window.ResizeObserver) new ResizeObserver(reportHeight).observe(document.body);
 </script>
 </body>
 </html>

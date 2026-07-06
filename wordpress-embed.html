@@ -1,0 +1,28 @@
+<!-- =====================================================================
+     Simabo — Volunteer Upload  ·  WordPress embed
+     Incolla TUTTO questo blocco in un widget "HTML" di Elementor
+     (o in un blocco "HTML personalizzato" di Gutenberg) su una pagina vuota.
+     La pagina reale gira su GitHub Pages; qui la incorporiamo via iframe.
+     L'altezza si adatta da sola al contenuto (postMessage).
+====================================================================== -->
+<div style="max-width:560px;margin:0 auto;">
+  <iframe
+    id="simabo-upload"
+    src="https://valeriorossidigital.github.io/simabo-volunteer-upload/"
+    title="Simabo — Upload photos and videos"
+    style="width:100%;border:0;height:900px;display:block;overflow:hidden;"
+    allow="camera; microphone"
+    loading="lazy"
+    scrolling="no"></iframe>
+</div>
+<script>
+(function(){
+  var frame = document.getElementById('simabo-upload');
+  window.addEventListener('message', function(e){
+    if(e.origin.indexOf('valeriorossidigital.github.io') === -1) return;
+    if(e.data && e.data.simaboUploadHeight){
+      frame.style.height = e.data.simaboUploadHeight + 'px';
+    }
+  });
+})();
+</script>
