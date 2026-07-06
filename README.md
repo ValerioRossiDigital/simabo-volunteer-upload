@@ -9,7 +9,8 @@ di **staging**. I byte del file **non passano da n8n**: n8n apre solo una
 
 | Pezzo | Dove |
 |-------|------|
-| Pagina live | https://valeriorossidigital.github.io/simabo-volunteer-upload/ |
+| **Link per i volontari** | https://simabo.org/upload-content-library/ (pagina WP con iframe) |
+| Sorgente (GitHub Pages) | https://valeriorossidigital.github.io/simabo-volunteer-upload/ |
 | Repo | https://github.com/ValerioRossiDigital/simabo-volunteer-upload (pubblico) |
 | Pagina form | `index.html` (questo folder) |
 | Embed WordPress | `wordpress-embed.html` — iframe + auto-altezza, per pagina `simabo.org` |
@@ -57,7 +58,8 @@ Le **immagini** vengono ottimizzate lato browser prima dell'upload (lato lungo m
 `main` aggiorna la pagina live in ~1 min (GitHub Pages da `main`, root).
 
 ### 3. Embed su WordPress (`simabo.org`)
-La pagina live è incorporata via **iframe** in una pagina WordPress:
+Pubblicata su **https://simabo.org/upload-content-library/** — è il link da dare ai
+volontari. La pagina live è incorporata via **iframe** in una pagina WordPress:
 1. Nuova pagina WP → widget Elementor **HTML** (o blocco Gutenberg HTML personalizzato).
 2. Incolla tutto il contenuto di `wordpress-embed.html`.
 3. Pubblica. L'iframe si **auto-dimensiona** (la pagina invia la sua altezza via
