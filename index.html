@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simabo — Upload photos and videos</title>
+<style>
+  :root{
+    --teal:#65BBB6; --gold:#FFC022; --dark:#2A2B2D; --bg:#F4F9F9;
+    --ok:#3BA55D; --err:#FF5151; --muted:#8A9A9A;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--dark);line-height:1.5;
+    padding:0 16px calc(env(safe-area-inset-bottom) + 24px);
+  }
+  .wrap{max-width:520px;margin:0 auto}
+  header{
+    text-align:center;background:var(--dark);margin:0 -16px 0;
+    padding:calc(env(safe-area-inset-top) + 20px) 16px 20px;
+    border-bottom:4px solid var(--teal);
+  }
+  header img.logo{height:48px;width:auto;display:inline-block}
+  .intro{text-align:center;font-size:1.1rem;font-weight:600;color:var(--dark);margin:22px 0 0}
+  .req{color:var(--err)}
+  .card{background:#fff;border-radius:16px;padding:20px;margin-top:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  label{display:block;font-weight:600;margin:0 0 6px;font-size:.9rem}
+  input[type=text],select{
+    width:100%;padding:14px;font-size:1rem;border:2px solid #E2ECEC;border-radius:12px;
+    background:#fff;color:var(--dark);appearance:none;-webkit-appearance:none;
+  }
+  select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2365BBB6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:40px;
+  }
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--teal)}
+  .row{margin-bottom:16px}
+  .drop{
+    display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;
+    border:2px dashed var(--teal);border-radius:14px;padding:26px 16px;background:#F0F8F7;
+    cursor:pointer;transition:background .15s;
+  }
+  .drop:active{background:#E2F1F0}
+  .drop svg{width:38px;height:38px;stroke:var(--teal)}
+  .drop b{font-size:1.05rem}
+  .drop span{color:var(--muted);font-size:.85rem}
+  input[type=file]{display:none}
+  .listhead{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .listhead .cnt{font-size:.8rem;color:var(--muted);font-weight:600}
+  .listhead .clear{font-size:.8rem;color:var(--err);background:none;border:none;padding:4px;width:auto;margin:0;cursor:pointer;font-weight:600}
+  .files{margin-top:6px;display:flex;flex-direction:column;gap:10px}
+  .file{background:#F7FBFB;border:1px solid #E2ECEC;border-radius:12px;padding:10px 12px}
+  .file .top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .file .nm{font-size:.85rem;word-break:break-all;flex:1}
+  .file .st{font-size:.75rem;font-weight:700;white-space:nowrap}
+  .st.wait{color:var(--muted)} .st.up{color:var(--teal)} .st.done{color:var(--ok)} .st.fail{color:var(--err)}
+  .bar{height:6px;background:#E2ECEC;border-radius:99px;margin-top:8px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:var(--teal);transition:width .2s}
+  .bar>i.done{background:var(--ok)} .bar>i.fail{background:var(--err)}
+  .alert{
+    display:flex;align-items:center;gap:10px;background:#FFF6DE;border:1.5px solid var(--gold);
+    color:#8A6D00;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:.9rem;font-weight:600;
+  }
+  .alert svg{width:22px;height:22px;stroke:#C79400;flex-shrink:0}
+  button{
+    width:100%;padding:16px;font-size:1.05rem;font-weight:700;color:#fff;background:var(--teal);
+    border:none;border-radius:14px;margin-top:16px;cursor:pointer;
+  }
+  button:disabled{background:#B9D7D5;cursor:not-allowed}
+  .done-msg{text-align:center;padding:24px 8px;display:none}
+  .done-msg svg{width:56px;height:56px;stroke:var(--ok)}
+  .done-msg h2{margin:10px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="simabo-logo-white.webp" alt="Simabo">
+  </header>
+
+  <p class="intro">Upload the animals' photos and videos</p>
+
+  <form id="form" class="card">
+    <div class="row">
+      <label for="first">First name <span class="req">*</span></label>
+      <input type="text" id="first" autocomplete="given-name" required>
+    </div>
+    <div class="row">
+      <label for="last">Last name <span class="req">*</span></label>
+      <input type="text" id="last" autocomplete="family-name" required>
+    </div>
+    <div class="row">
+      <label for="type">Type <span class="req">*</span></label>
+      <select id="type" required>
+        <option value="" disabled selected>Select type…</option>
+        <option value="dog">Dog</option>
+        <option value="cat">Cat</option>
+        <option value="volunteer">Volunteer</option>
+        <option value="clinic">Clinic</option>
+        <option value="hostel">Hostel</option>
+        <option value="generic">Generic</option>
+      </select>
+    </div>
+    <div class="row" id="animalRow" style="display:none">
+      <label for="animal">Animal name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+      <input type="text" id="animal" placeholder="e.g. Luna" autocomplete="off">
+    </div>
+    <div class="row">
+      <label>Files (photos and videos) <span class="req">*</span></label>
+      <label class="drop" for="files">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-5 5M12 4l5 5"/><path d="M4 20h16"/></svg>
+        <b>Tap to choose</b>
+        <span>You can add more in several steps</span>
+      </label>
+      <input type="file" id="files" accept="image/*,video/*" multiple>
+      <div class="listhead" id="listHead" style="display:none">
+        <span class="cnt" id="fileCount"></span>
+        <button type="button" class="clear" id="clearAll">Remove all</button>
+      </div>
+      <div class="files" id="fileList"></div>
+    </div>
+
+    <button type="submit" id="send" disabled>Upload</button>
+
+    <div class="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      <span>Do not close this page while uploading.</span>
+    </div>
+  </form>
+
+  <div class="done-msg card" id="doneMsg">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    <h2>Done, thank you!</h2>
+    <p id="doneCount"></p>
+    <button type="button" id="again">Upload more files</button>
+  </div>
+</div>
+
+<script>
+  // === CONFIG =============================================================
+  // Production URL of the n8n webhook "Simabo - Drive Upload Session (resumable)"
+  const WEBHOOK_URL = 'https://n8n.gorillatribe.net/webhook/simabo-drive-session';
+  // ========================================================================
+
+  const $ = id => document.getElementById(id);
+  const firstEl = $('first'), lastEl = $('last'), typeEl = $('type'), filesEl = $('files');
+  const animalEl = $('animal'), animalRow = $('animalRow');
+  const listEl = $('fileList'), listHead = $('listHead'), fileCount = $('fileCount');
+  const sendBtn = $('send'), form = $('form');
+  let selected = [];
+
+  function clean(s){
+    return String(s || '')
+      .replace(/[\/\\:*?"<>|()\[\]]/g,'')   // drop filesystem-unsafe chars & our delimiters
+      .replace(/\s+/g,' ').trim();
+  }
+  function extOf(name){
+    const i = name.lastIndexOf('.');
+    return i > -1 ? name.slice(i).toLowerCase() : '';
+  }
+
+  // --- Client-side image optimization (videos are left untouched) ----------
+  const MAX_EDGE = 2560, JPEG_QUALITY = 0.85;
+
+  function isImage(f){ return (f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|heic|heif|webp|gif|bmp|tiff?)$/i.test(f.name); }
+  function isHeic(f){ return /image\/hei[cf]/i.test(f.type || '') || /\.(heic|heif)$/i.test(f.name); }
+
+  let heicLib = null;
+  function loadHeicLib(){
+    if(heicLib) return heicLib;
+    heicLib = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      s.onload = resolve; s.onerror = () => reject(new Error('heic lib'));
+      document.head.appendChild(s);
+    });
+    return heicLib;
+  }
+  function blobToImage(blob){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+      img.src = url;
+    });
+  }
+  // Returns a (possibly) smaller JPEG File. On any failure returns the original.
+  async function compressImage(file){
+    if(!isImage(file)) return file;                 // videos & other files: untouched
+    let src = file;
+    if(isHeic(file)){
+      await loadHeicLib();
+      const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: JPEG_QUALITY });
+      src = Array.isArray(out) ? out[0] : out;
+    }
+    const img = await blobToImage(src);
+    const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', JPEG_QUALITY));
+    if(!blob) return file;
+    const newName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
+  }
+  function refreshBtn(){
+    sendBtn.disabled = !(firstEl.value.trim() && lastEl.value.trim() && typeEl.value && selected.length);
+  }
+
+  function renderList(){
+    listEl.innerHTML = '';
+    selected.forEach((f, i) => {
+      const el = document.createElement('div');
+      el.className = 'file';
+      el.innerHTML =
+        '<div class="top"><span class="nm">'+ f.name +'</span>'+
+        '<span class="st wait" id="st'+i+'">waiting</span></div>'+
+        '<div class="bar"><i id="bar'+i+'"></i></div>';
+      listEl.appendChild(el);
+    });
+    const has = selected.length > 0;
+    listHead.style.display = has ? 'flex' : 'none';
+    fileCount.textContent = selected.length + (selected.length === 1 ? ' file selected' : ' files selected');
+  }
+
+  // Accumulate across multiple selections (do not replace previous ones)
+  filesEl.addEventListener('change', () => {
+    const incoming = Array.from(filesEl.files);
+    for(const f of incoming){
+      const key = f.name + '|' + f.size + '|' + f.lastModified;
+      const dup = selected.some(s => (s.name + '|' + s.size + '|' + s.lastModified) === key);
+      if(!dup) selected.push(f);
+    }
+    filesEl.value = '';           // reset so the same files can be picked again / add more
+    renderList(); refreshBtn();
+  });
+
+  $('clearAll').addEventListener('click', () => {
+    selected = [];
+    renderList(); refreshBtn();
+  });
+
+  firstEl.addEventListener('input', refreshBtn);
+  lastEl.addEventListener('input', refreshBtn);
+  typeEl.addEventListener('change', () => {
+    const showAnimal = typeEl.value === 'dog' || typeEl.value === 'cat';
+    animalRow.style.display = showAnimal ? 'block' : 'none';
+    if(!showAnimal) animalEl.value = '';
+    refreshBtn();
+  });
+
+  function setStatus(i, cls, text){
+    const s = $('st'+i); if(s){ s.className = 'st '+cls; s.textContent = text; }
+  }
+  function setBar(i, pct, cls){
+    const b = $('bar'+i); if(b){ b.style.width = pct+'%'; if(cls) b.className = cls; }
+  }
+
+  async function getUploadUrl(fileName, mimeType){
+    const res = await fetch(WEBHOOK_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ fileName, mimeType })
+    });
+    if(!res.ok) throw new Error('session '+res.status);
+    const data = await res.json();
+    if(!data.uploadUrl) throw new Error('no uploadUrl');
+    return data.uploadUrl;
+  }
+
+  // Resolves as soon as all bytes are delivered to Google. Reading Google's
+  // response is often blocked by CORS on the upload endpoint, which is harmless:
+  // the file is already stored once the body has been fully sent.
+  function putFile(url, file, onProgress){
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let sent = false;
+      xhr.open('PUT', url, true);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.upload.onprogress = e => { if(e.lengthComputable) onProgress(e.loaded / e.total); };
+      xhr.upload.onload = () => { sent = true; };              // all bytes delivered
+      xhr.onload = () => {
+        if(xhr.status >= 200 && xhr.status < 300) resolve();
+        else if(sent) resolve();                               // stored despite unreadable status
+        else reject(new Error('put '+xhr.status));
+      };
+      xhr.onerror = () => { sent ? resolve() : reject(new Error('network')); };
+      xhr.send(file);
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    sendBtn.disabled = true;
+    firstEl.disabled = lastEl.disabled = typeEl.disabled = animalEl.disabled = filesEl.disabled = true;
+    $('clearAll').disabled = true;
+
+    const isAnimal = typeEl.value === 'dog' || typeEl.value === 'cat';
+    const type = (typeEl.value || 'generic').toUpperCase();
+    const animal = isAnimal ? clean(animalEl.value) : '';
+    const person = clean(firstEl.value + ' ' + lastEl.value) || 'unknown';
+    const sessionCode = Math.random().toString(36).slice(2,6);
+    let okCount = 0;
+
+    for(let i = 0; i < selected.length; i++){
+      const original = selected[i];
+      const code = sessionCode + '-' + String(i+1).padStart(3,'0');
+      try {
+        setStatus(i,'up','optimizing…'); setBar(i, 3);
+        let file = original;
+        try { file = await compressImage(original); } catch(e){ file = original; console.warn('compress skipped', original.name, e); }
+
+        let stem = type;
+        if(animal) stem += ' ' + animal;
+        stem += ' (' + person + ') [' + code + ']';
+        const finalName = stem + extOf(file.name);
+
+        setStatus(i,'up','preparing…'); setBar(i, 5);
+        const url = await getUploadUrl(finalName, file.type || 'application/octet-stream');
+        setStatus(i,'up','0%');
+        await putFile(url, file, p => {
+          const pct = Math.round(p*100);
+          setStatus(i,'up',pct+'%'); setBar(i, Math.max(5,pct));
+        });
+        setStatus(i,'done','ok'); setBar(i,100,'done'); okCount++;
+      } catch(err){
+        setStatus(i,'fail','error'); setBar(i,100,'fail');
+        console.error(original.name, err);
+      }
+    }
+
+    $('doneCount').textContent = okCount + ' of ' + selected.length + ' files uploaded';
+    form.style.display = 'none';
+    $('doneMsg').style.display = 'block';
+  });
+
+  $('again').addEventListener('click', () => location.reload());
+</script>
+</body>
+</html>
