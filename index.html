@@ -12,20 +12,13 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
     margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:var(--bg);color:var(--dark);line-height:1.5;
+    background:transparent;color:var(--dark);line-height:1.5;
     padding:0 16px calc(env(safe-area-inset-bottom) + 24px);
   }
   .wrap{max-width:520px;margin:0 auto}
-  header{
-    text-align:center;background:var(--dark);margin:0 -16px 0;
-    padding:calc(env(safe-area-inset-top) + 20px) 16px 20px;
-    border-bottom:4px solid var(--teal);
-  }
-  header img.logo{height:48px;width:auto;display:inline-block}
-  .intro{text-align:center;font-size:1.1rem;font-weight:600;color:var(--dark);margin:22px 0 0}
   .req{color:var(--err)}
   .card{background:#fff;border-radius:16px;padding:20px;margin-top:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-  label{display:block;font-weight:600;margin:0 0 6px;font-size:.9rem}
+  label{display:block;font-weight:400;margin:0 0 6px;font-size:15px}
   input[type=text],select{
     width:100%;padding:14px;font-size:1rem;border:2px solid #E2ECEC;border-radius:12px;
     background:#fff;color:var(--dark);appearance:none;-webkit-appearance:none;
@@ -33,9 +26,10 @@
   select{
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2365BBB6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
     background-repeat:no-repeat;background-position:right 14px center;padding-right:40px;
+    font-size:15px;font-weight:400;
   }
   input[type=text]:focus,select:focus{outline:none;border-color:var(--teal)}
-  .row{margin-bottom:16px}
+  .row{margin-bottom:8px}
   .drop{
     display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;
     border:2px dashed var(--teal);border-radius:14px;padding:26px 16px;background:#F0F8F7;
@@ -43,8 +37,8 @@
   }
   .drop:active{background:#E2F1F0}
   .drop svg{width:38px;height:38px;stroke:var(--teal)}
-  .drop b{font-size:1.05rem}
-  .drop span{color:var(--muted);font-size:.85rem}
+  .drop b{font-size:15px;font-weight:400}
+  .drop span{color:var(--muted);font-size:15px}
   input[type=file]{display:none}
   .listhead{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
   .listhead .cnt{font-size:.8rem;color:var(--muted);font-weight:600}
@@ -59,8 +53,8 @@
   .bar>i{display:block;height:100%;width:0;background:var(--teal);transition:width .2s}
   .bar>i.done{background:var(--ok)} .bar>i.fail{background:var(--err)}
   .alert{
-    display:flex;align-items:center;gap:10px;background:#FFF6DE;border:1.5px solid var(--gold);
-    color:#8A6D00;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:.9rem;font-weight:600;
+    display:flex;align-items:center;gap:10px;
+    color:#8A6D00;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:500;
   }
   .alert svg{width:22px;height:22px;stroke:#C79400;flex-shrink:0}
   button{
@@ -75,12 +69,6 @@
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <img class="logo" src="simabo-logo-white.webp" alt="Simabo">
-  </header>
-
-  <p class="intro">Upload the animals' photos and videos</p>
-
   <form id="form" class="card">
     <div class="row">
       <label for="first">First name <span class="req">*</span></label>
