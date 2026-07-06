@@ -9,6 +9,8 @@ di **staging**. I byte del file **non passano da n8n**: n8n apre solo una
 
 | Pezzo | Dove |
 |-------|------|
+| Pagina live | https://valeriorossidigital.github.io/simabo-volunteer-upload/ |
+| Repo | https://github.com/ValerioRossiDigital/simabo-volunteer-upload (pubblico) |
 | Pagina form | `index.html` (questo folder) |
 | Portiere sessioni | n8n `Simabo - Drive Upload Session (resumable)` — ID `xYv0Z8bsuBeyr7u6` |
 
@@ -22,8 +24,17 @@ di **staging**. I byte del file **non passano da n8n**: n8n apre solo una
      └--PUT byte del file--------------------------> [Google Drive]  (diretto)
 ```
 
-Naming file: `AAAA-MM-GG_Cognome-Nome_NNN.ext` (accenti/spazi normalizzati,
-contatore sequenziale per invio).
+Naming file: `TYPE Animal (First Last) [code].ext`
+- `TYPE` uppercase (DOG, CAT, VOLUNTEER, CLINIC, HOSTEL, GENERIC)
+- `Animal` solo per dog/cat, se il volontario lo inserisce (opzionale)
+- `(First Last)` = chi ha caricato
+- `[code]` = codice univoco `sessione-progressivo` (es. `a3f9-001`) anti-collisione
+- Niente data nel nome: c'è già `createdTime` su Drive.
+
+Esempi: `DOG Luna (Mario Rossi) [a3f9-001].jpg` · `CLINIC (Mario Rossi) [a3f9-002].jpg`
+
+Le **immagini** vengono ottimizzate lato browser prima dell'upload (lato lungo max
+2560px, JPEG q0.85; HEIC convertito in JPEG via `heic2any`). I **video** restano intatti.
 
 ## Setup
 
