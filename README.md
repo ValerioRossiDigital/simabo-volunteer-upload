@@ -97,4 +97,3 @@ python3 -m http.server 8080   # apri http://localhost:8080 (non file:// → CORS
 - PUT in **un colpo solo**: se cade la rete a metà, quel file riparte da zero. Per veri
   "resume" su file enormi si può passare a chunk da ~8–16 MB con `Content-Range`.
 - Nessuna autenticazione sul form: chiunque abbia il link può caricare nella cartella staging.
-- `simabo-logo-white.webp` resta nel repo ma non è più referenziato (logo dato da WP).
