@@ -57,6 +57,9 @@
     color:#8A6D00;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:500;
   }
   .alert svg{width:22px;height:22px;stroke:#C79400;flex-shrink:0}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:13px;color:var(--dark);line-height:1.45;cursor:pointer}
+  .consent input{width:20px;height:20px;min-width:20px;margin:1px 0 0;accent-color:var(--teal);cursor:pointer}
+  .consent a{color:var(--teal);font-weight:600}
   button{
     width:100%;padding:16px;font-size:1.05rem;font-weight:700;color:#fff;background:var(--teal);
     border:none;border-radius:14px;margin-top:16px;cursor:pointer;
@@ -109,6 +112,11 @@
       <div class="files" id="fileList"></div>
     </div>
 
+    <label class="consent">
+      <input type="checkbox" id="consent" required>
+      <span>I confirm I took these photos and videos, or have the right to share them, and I grant Simabo the free, perpetual and worldwide right to use, edit and publish them — including on social media and for fundraising. I have read and accept the <a href="https://simabo.org/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>. <span class="req">*</span></span>
+    </label>
+
     <button type="submit" id="send" disabled>Upload</button>
 
     <div class="alert">
@@ -133,7 +141,7 @@
 
   const $ = id => document.getElementById(id);
   const firstEl = $('first'), lastEl = $('last'), typeEl = $('type'), filesEl = $('files');
-  const animalEl = $('animal'), animalRow = $('animalRow');
+  const animalEl = $('animal'), animalRow = $('animalRow'), consentEl = $('consent');
   const listEl = $('fileList'), listHead = $('listHead'), fileCount = $('fileCount');
   const sendBtn = $('send'), form = $('form');
   let selected = [];
@@ -195,7 +203,7 @@
     return new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
   }
   function refreshBtn(){
-    sendBtn.disabled = !(firstEl.value.trim() && lastEl.value.trim() && typeEl.value && selected.length);
+    sendBtn.disabled = !(firstEl.value.trim() && lastEl.value.trim() && typeEl.value && selected.length && consentEl.checked);
   }
 
   function renderList(){
@@ -233,6 +241,7 @@
 
   firstEl.addEventListener('input', refreshBtn);
   lastEl.addEventListener('input', refreshBtn);
+  consentEl.addEventListener('change', refreshBtn);
   typeEl.addEventListener('change', () => {
     const showAnimal = typeEl.value === 'dog' || typeEl.value === 'cat';
     animalRow.style.display = showAnimal ? 'block' : 'none';
@@ -283,7 +292,7 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     sendBtn.disabled = true;
-    firstEl.disabled = lastEl.disabled = typeEl.disabled = animalEl.disabled = filesEl.disabled = true;
+    firstEl.disabled = lastEl.disabled = typeEl.disabled = animalEl.disabled = filesEl.disabled = consentEl.disabled = true;
     $('clearAll').disabled = true;
 
     const isAnimal = typeEl.value === 'dog' || typeEl.value === 'cat';
