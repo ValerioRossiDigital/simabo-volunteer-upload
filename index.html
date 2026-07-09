@@ -87,6 +87,8 @@
         <option value="" disabled selected>Select category…</option>
         <option value="dog">Dog</option>
         <option value="cat">Cat</option>
+        <option value="adopted">Adopted</option>
+        <option value="campaign">Campaign</option>
         <option value="shelter">Shelter</option>
         <option value="clinic">Clinic</option>
         <option value="stray animals">Stray animals</option>
@@ -246,7 +248,7 @@
   lastEl.addEventListener('input', refreshBtn);
   consentEl.addEventListener('change', refreshBtn);
   typeEl.addEventListener('change', () => {
-    const showAnimal = typeEl.value === 'dog' || typeEl.value === 'cat';
+    const showAnimal = typeEl.value === 'dog' || typeEl.value === 'cat' || typeEl.value === 'adopted';
     animalRow.style.display = showAnimal ? 'block' : 'none';
     if(!showAnimal) animalEl.value = '';
     refreshBtn();
@@ -298,7 +300,7 @@
     firstEl.disabled = lastEl.disabled = typeEl.disabled = animalEl.disabled = filesEl.disabled = consentEl.disabled = true;
     $('clearAll').disabled = true;
 
-    const isAnimal = typeEl.value === 'dog' || typeEl.value === 'cat';
+    const isAnimal = typeEl.value === 'dog' || typeEl.value === 'cat' || typeEl.value === 'adopted';
     const type = (typeEl.value || 'generic').toUpperCase();
     const animal = isAnimal ? clean(animalEl.value) : '';
     const person = clean(firstEl.value + ' ' + lastEl.value) || 'unknown';
