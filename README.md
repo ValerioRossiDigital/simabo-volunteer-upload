@@ -5,6 +5,9 @@ carica foto e video, i file vengono rinominati e finiscono in una cartella Drive
 di **staging**. I byte del file **non passano da n8n**: n8n apre solo una
 *resumable upload session* su Google Drive e il browser carica direttamente su Google.
 
+> **Dove finiscono i media caricati:** cartella Drive di staging
+> [`1zZXFmzpiTFAZEt2PkZsuZNPEQrFklPya`](https://drive.google.com/drive/u/3/folders/1zZXFmzpiTFAZEt2PkZsuZNPEQrFklPya).
+
 ## Pezzi
 
 | Pezzo | Dove |
