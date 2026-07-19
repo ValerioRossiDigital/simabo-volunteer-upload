@@ -68,6 +68,8 @@
   .done-msg{text-align:center;padding:24px 8px;display:none}
   .done-msg svg{width:56px;height:56px;stroke:var(--ok)}
   .done-msg h2{margin:10px 0 4px}
+  .done-msg.is-error svg{stroke:var(--err)}
+  .done-msg.is-error h2{color:var(--err)}
 </style>
 </head>
 <body>
@@ -131,8 +133,8 @@
   </form>
 
   <div class="done-msg card" id="doneMsg">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-    <h2>Done, thank you!</h2>
+    <svg id="doneIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    <h2 id="doneTitle">Done, thank you!</h2>
     <p id="doneCount"></p>
     <button type="button" id="again">Upload more files</button>
   </div>
@@ -261,15 +263,24 @@
     const b = $('bar'+i); if(b){ b.style.width = pct+'%'; if(cls) b.className = cls; }
   }
 
+  // Errors tagged {kind:'server'} mean the n8n side failed (webhook down,
+  // non-2xx, no uploadUrl): the file was never sent to Google. The final
+  // screen turns these into an explicit "service unavailable" message.
+  function serverError(msg){ const e = new Error(msg); e.kind = 'server'; return e; }
+
   async function getUploadUrl(fileName, mimeType){
-    const res = await fetch(WEBHOOK_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ fileName, mimeType })
-    });
-    if(!res.ok) throw new Error('session '+res.status);
-    const data = await res.json();
-    if(!data.uploadUrl) throw new Error('no uploadUrl');
+    let res;
+    try {
+      res = await fetch(WEBHOOK_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ fileName, mimeType })
+      });
+    } catch(e){ throw serverError('network'); }        // webhook unreachable
+    if(!res.ok) throw serverError('session '+res.status);
+    let data;
+    try { data = await res.json(); } catch(e){ throw serverError('bad response'); }
+    if(!data.uploadUrl) throw serverError('no uploadUrl');
     return data.uploadUrl;
   }
 
@@ -305,7 +316,7 @@
     const animal = isAnimal ? clean(animalEl.value) : '';
     const person = clean(firstEl.value + ' ' + lastEl.value) || 'unknown';
     const sessionCode = Math.random().toString(36).slice(2,6);
-    let okCount = 0;
+    let okCount = 0, serverFailed = false;
 
     for(let i = 0; i < selected.length; i++){
       const original = selected[i];
@@ -329,15 +340,44 @@
         });
         setStatus(i,'done','ok'); setBar(i,100,'done'); okCount++;
       } catch(err){
-        setStatus(i,'fail','error'); setBar(i,100,'fail');
+        const isServer = err && err.kind === 'server';
+        if(isServer) serverFailed = true;
+        setStatus(i,'fail', isServer ? 'service error' : 'upload failed'); setBar(i,100,'fail');
         console.error(original.name, err);
       }
     }
 
-    $('doneCount').textContent = okCount + ' of ' + selected.length + ' files uploaded';
-    form.style.display = 'none';
-    $('doneMsg').style.display = 'block';
+    showOutcome(okCount, selected.length, serverFailed);
   });
+
+  const ICON_CHECK = '<path d="M20 6L9 17l-5-5"/>';
+  const ICON_ALERT = '<path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>';
+
+  // Final screen: success, partial, or failure. When nothing was saved because
+  // the n8n side failed, say so explicitly instead of "Done, thank you!".
+  function showOutcome(okCount, total, serverFailed){
+    const box = $('doneMsg'), icon = $('doneIcon'), title = $('doneTitle'), msg = $('doneCount');
+    if(okCount === total){
+      box.classList.remove('is-error');
+      icon.innerHTML = ICON_CHECK;
+      title.textContent = 'Done, thank you!';
+      msg.textContent = total + (total === 1 ? ' file uploaded' : ' files uploaded');
+    } else if(okCount > 0){
+      box.classList.add('is-error');
+      icon.innerHTML = ICON_ALERT;
+      title.textContent = 'Some files did not upload';
+      msg.textContent = okCount + ' of ' + total + ' uploaded. Please try the failed ones again — you can re-select just those.';
+    } else {
+      box.classList.add('is-error');
+      icon.innerHTML = ICON_ALERT;
+      title.textContent = serverFailed ? 'Upload service unavailable' : 'Upload failed';
+      msg.textContent = serverFailed
+        ? 'Nothing was saved — the upload service is not responding right now. Please try again in a few minutes. If it keeps failing, let Simabo know.'
+        : 'Nothing was uploaded. Please check your connection and try again.';
+    }
+    form.style.display = 'none';
+    box.style.display = 'block';
+  }
 
   $('again').addEventListener('click', () => location.reload());
 
