@@ -152,6 +152,7 @@
   const listEl = $('fileList'), listHead = $('listHead'), fileCount = $('fileCount');
   const sendBtn = $('send'), form = $('form');
   let selected = [];
+  let uploading = false;   // status + progress bar appear only once Upload is tapped
 
   function clean(s){
     return String(s || '')
@@ -220,8 +221,8 @@
       el.className = 'file';
       el.innerHTML =
         '<div class="top"><span class="nm">'+ f.name +'</span>'+
-        '<span class="st wait" id="st'+i+'">waiting</span></div>'+
-        '<div class="bar"><i id="bar'+i+'"></i></div>';
+        (uploading ? '<span class="st wait" id="st'+i+'">waiting</span>' : '') + '</div>'+
+        (uploading ? '<div class="bar"><i id="bar'+i+'"></i></div>' : '');
       listEl.appendChild(el);
     });
     const has = selected.length > 0;
@@ -310,6 +311,7 @@
     sendBtn.disabled = true;
     firstEl.disabled = lastEl.disabled = typeEl.disabled = animalEl.disabled = filesEl.disabled = consentEl.disabled = true;
     $('clearAll').disabled = true;
+    uploading = true; renderList();
 
     const isAnimal = typeEl.value === 'dog' || typeEl.value === 'cat' || typeEl.value === 'adopted';
     const type = (typeEl.value || 'generic').toUpperCase();
