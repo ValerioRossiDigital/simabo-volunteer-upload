@@ -264,10 +264,13 @@
     const b = $('bar'+i); if(b){ b.style.width = pct+'%'; if(cls) b.className = cls; }
   }
 
-  // Errors tagged {kind:'server'} mean the n8n side failed (webhook down,
-  // non-2xx, no uploadUrl): the file was never sent to Google. The final
-  // screen turns these into an explicit "service unavailable" message.
+  // Errors tagged {kind:'server'} mean the n8n side answered but failed (non-2xx,
+  // bad JSON, no uploadUrl): the file was never sent to Google. Errors tagged
+  // {kind:'connection'} mean the request never completed at all — usually the
+  // phone losing signal mid-request. The final screen shows a different message
+  // for each, so a volunteer on a bad line is not told the service is broken.
   function serverError(msg){ const e = new Error(msg); e.kind = 'server'; return e; }
+  function connectionError(msg){ const e = new Error(msg); e.kind = 'connection'; return e; }
 
   async function getUploadUrl(fileName, mimeType){
     let res;
@@ -277,7 +280,7 @@
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ fileName, mimeType })
       });
-    } catch(e){ throw serverError('network'); }        // webhook unreachable
+    } catch(e){ throw connectionError('network'); }    // request never got through
     if(!res.ok) throw serverError('session '+res.status);
     let data;
     try { data = await res.json(); } catch(e){ throw serverError('bad response'); }
@@ -301,7 +304,7 @@
         else if(sent) resolve();                               // stored despite unreadable status
         else reject(new Error('put '+xhr.status));
       };
-      xhr.onerror = () => { sent ? resolve() : reject(new Error('network')); };
+      xhr.onerror = () => { sent ? resolve() : reject(connectionError('network')); };
       xhr.send(file);
     });
   }
@@ -318,7 +321,7 @@
     const animal = isAnimal ? clean(animalEl.value) : '';
     const person = clean(firstEl.value + ' ' + lastEl.value) || 'unknown';
     const sessionCode = Math.random().toString(36).slice(2,6);
-    let okCount = 0, serverFailed = false;
+    let okCount = 0, serverFailed = false, connectionFailed = false;
 
     for(let i = 0; i < selected.length; i++){
       const original = selected[i];
@@ -342,22 +345,24 @@
         });
         setStatus(i,'done','ok'); setBar(i,100,'done'); okCount++;
       } catch(err){
-        const isServer = err && err.kind === 'server';
-        if(isServer) serverFailed = true;
-        setStatus(i,'fail', isServer ? 'service error' : 'upload failed'); setBar(i,100,'fail');
+        const kind = err && err.kind;
+        if(kind === 'server') serverFailed = true;
+        else if(kind === 'connection') connectionFailed = true;
+        setStatus(i,'fail', kind === 'server' ? 'service error' : kind === 'connection' ? 'no connection' : 'upload failed');
+        setBar(i,100,'fail');
         console.error(original.name, err);
       }
     }
 
-    showOutcome(okCount, selected.length, serverFailed);
+    showOutcome(okCount, selected.length, serverFailed, connectionFailed);
   });
 
   const ICON_CHECK = '<path d="M20 6L9 17l-5-5"/>';
   const ICON_ALERT = '<path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>';
 
-  // Final screen: success, partial, or failure. When nothing was saved because
-  // the n8n side failed, say so explicitly instead of "Done, thank you!".
-  function showOutcome(okCount, total, serverFailed){
+  // Final screen: success, partial, or failure. When nothing was saved, name the
+  // actual cause — service down vs. connection dropped — instead of "Done, thank you!".
+  function showOutcome(okCount, total, serverFailed, connectionFailed){
     const box = $('doneMsg'), icon = $('doneIcon'), title = $('doneTitle'), msg = $('doneCount');
     if(okCount === total){
       box.classList.remove('is-error');
@@ -372,10 +377,16 @@
     } else {
       box.classList.add('is-error');
       icon.innerHTML = ICON_ALERT;
-      title.textContent = serverFailed ? 'Upload service unavailable' : 'Upload failed';
-      msg.textContent = serverFailed
-        ? 'Nothing was saved — the upload service is not responding right now. Please try again in a few minutes. If it keeps failing, let Simabo know.'
-        : 'Nothing was uploaded. Please check your connection and try again.';
+      if(serverFailed){
+        title.textContent = 'Upload service unavailable';
+        msg.textContent = 'Nothing was saved — the upload service is not responding right now. Please try again in a few minutes. If it keeps failing, let Simabo know.';
+      } else if(connectionFailed){
+        title.textContent = 'Connection lost';
+        msg.textContent = 'Nothing was saved — your phone lost the connection before the files could be sent. Move to a spot with better signal or switch to Wi-Fi, then try again. If your connection is good and it keeps failing, let Simabo know.';
+      } else {
+        title.textContent = 'Upload failed';
+        msg.textContent = 'Nothing was uploaded. Please check your connection and try again.';
+      }
     }
     form.style.display = 'none';
     box.style.display = 'block';
