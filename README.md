@@ -16,6 +16,7 @@ di **staging**. I byte del file **non passano da n8n**: n8n apre solo una
 | Sorgente (GitHub Pages) | https://valeriorossidigital.github.io/simabo-volunteer-upload/ |
 | Repo | https://github.com/ValerioRossiDigital/simabo-volunteer-upload (pubblico) |
 | Pagina form | `index.html` (questo folder) |
+| Pagina form v2 (nuovo design, solo sito locale per ora) | `v2/index.html` → https://valeriorossidigital.github.io/simabo-volunteer-upload/v2/ |
 | Embed WordPress | `wordpress-embed.html` — iframe + auto-altezza, per pagina `simabo.org` |
 | Portiere sessioni | n8n `Simabo - Drive Upload Session (resumable)` — ID `xYv0Z8bsuBeyr7u6` |
 
