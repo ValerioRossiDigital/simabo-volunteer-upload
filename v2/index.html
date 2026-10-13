@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simabo — Upload photos and videos</title>
+<style>
+  /* Brand v1 (same tokens as the Elementor kit of simabo.org). Fonts self-hosted: no Google Fonts request. */
+  @font-face{font-family:"Roboto";font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/roboto-latin.woff2) format("woff2")}
+  @font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:200 800;font-display:swap;src:url(fonts/bricolage-latin.woff2) format("woff2")}
+  :root{
+    --teal:#65BBB6; --teal-dk:#2E7D78; --ink:#2A2B2D; --muted:#6B7376; --line:#E4E8E7;
+    --tint:#EEF7F6; --paper:#F6F3EC; --err:#FF5151; --ok:#2E7D78;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;font-family:Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;
+    background:transparent;color:var(--ink);line-height:1.6;
+    padding:4px 16px calc(env(safe-area-inset-bottom) + 48px);
+  }
+  .wrap{max-width:560px;margin:0 auto}
+  .req{color:var(--err)}
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:32px;
+    box-shadow:0 18px 40px rgba(42,43,45,.08);
+  }
+  label{display:block;margin:0;padding-bottom:6px;font-size:13px;line-height:1.6;color:var(--muted)}
+  input[type=text],select{
+    width:100%;height:47px;padding:0 16px;font:inherit;font-size:15px;color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;background:#fff;appearance:none;-webkit-appearance:none;
+  }
+  input[type=text]::placeholder{color:var(--muted);opacity:.8}
+  select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232A2B2D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:40px;
+  }
+  select:invalid{color:var(--muted)}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--teal-dk);box-shadow:0 0 0 3px rgba(101,187,182,.25)}
+  .row{margin-bottom:18px}
+  .drop{
+    display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:28px 16px;
+    border:1.5px dashed var(--teal);border-radius:12px;background:var(--tint);color:var(--ink);
+    cursor:pointer;transition:background .15s,border-color .15s;
+  }
+  .drop:hover{border-color:var(--teal-dk)}
+  .drop:active{background:#E2F1F0}
+  .drop .ico{
+    width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px rgba(42,43,45,.06);margin-bottom:4px;
+  }
+  .drop svg{width:24px;height:24px;stroke:var(--teal-dk)}
+  .drop b{font-size:15px;font-weight:700}
+  .drop>span:not(.ico){color:var(--muted);font-size:13px}
+  input[type=file]{display:none}
+  .listhead{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  .listhead .cnt{font-size:13px;color:var(--muted)}
+  .listhead .clear{
+    font:inherit;font-size:13px;color:var(--muted);background:none;border:none;padding:4px;width:auto;height:auto;
+    margin:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+  }
+  .listhead .clear:hover{color:var(--err)}
+  .files{margin-top:6px;display:flex;flex-direction:column;gap:8px}
+  .file{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+  .file .top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .file .nm{font-size:13px;word-break:break-all;flex:1}
+  .file .st{font-size:12px;font-weight:700;white-space:nowrap}
+  .st.wait{color:var(--muted)} .st.up{color:var(--teal-dk)} .st.done{color:var(--ok)} .st.fail{color:var(--err)}
+  .bar{height:4px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:var(--teal);transition:width .2s}
+  .bar>i.done{background:var(--teal-dk)} .bar>i.fail{background:var(--err)}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin-top:22px;padding:0;font-size:13px;color:var(--muted);line-height:1.55;cursor:pointer}
+  .consent input{width:18px;height:18px;min-width:18px;margin:1px 0 0;accent-color:var(--teal-dk);cursor:pointer}
+  .consent a{color:var(--teal-dk);text-decoration:underline;text-underline-offset:2px}
+  button{
+    width:100%;height:47px;padding:0 22px;font:inherit;font-size:15px;font-weight:700;color:#fff;
+    background:var(--teal-dk);border:none;border-radius:8px;margin-top:20px;cursor:pointer;transition:background .15s;
+  }
+  button:hover:not(:disabled){background:#25696A}
+  button:disabled{background:var(--teal-dk);opacity:.4;cursor:not-allowed}
+  .alert{
+    display:flex;align-items:center;gap:10px;margin-top:16px;
+    background:var(--paper);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--ink);
+  }
+  .alert svg{width:18px;height:18px;stroke:#B98A00;flex-shrink:0}
+  .done-msg{text-align:center;padding:40px 32px;display:none}
+  .done-msg svg{
+    width:64px;height:64px;padding:16px;border-radius:50%;background:var(--tint);stroke:var(--teal-dk);
+  }
+  .done-msg h2{
+    font-family:"Bricolage Grotesque",Roboto,sans-serif;font-weight:800;font-size:30px;line-height:1.05;
+    letter-spacing:-.02em;margin:18px 0 8px;
+  }
+  .done-msg p{color:var(--muted);margin:0}
+  .done-msg.is-error svg{stroke:var(--err);background:#FFEDED}
+  @media (max-width:480px){
+    .card{padding:24px 20px}
+    .done-msg{padding:32px 20px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form id="form" class="card">
+    <div class="row">
+      <label for="first">First name <span class="req">*</span></label>
+      <input type="text" id="first" autocomplete="given-name" required>
+    </div>
+    <div class="row">
+      <label for="last">Last name <span class="req">*</span></label>
+      <input type="text" id="last" autocomplete="family-name" required>
+    </div>
+    <div class="row">
+      <label for="type">Category <span class="req">*</span></label>
+      <select id="type" required>
+        <option value="" disabled selected>Select category…</option>
+        <option value="dog">Dog</option>
+        <option value="cat">Cat</option>
+        <option value="adopted">Adopted</option>
+        <option value="campaign">Campaign</option>
+        <option value="shelter">Shelter</option>
+        <option value="clinic">Clinic</option>
+        <option value="stray animals">Stray animals</option>
+        <option value="volunteers">Volunteers</option>
+        <option value="staff">Staff</option>
+        <option value="Cape Verde">Cape Verde</option>
+        <option value="generic">Generic</option>
+      </select>
+    </div>
+    <div class="row" id="animalRow" style="display:none">
+      <label for="animal">Animal name</label>
+      <input type="text" id="animal" placeholder="e.g. Luna" autocomplete="off">
+    </div>
+    <div class="row">
+      <label>Files (photos and videos) <span class="req">*</span></label>
+      <label class="drop" for="files">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-5 5M12 4l5 5"/><path d="M4 20h16"/></svg></span>
+        <b>Tap to choose</b>
+        <span>You can add more in several steps</span>
+      </label>
+      <input type="file" id="files" accept="image/*,video/*" multiple>
+      <div class="listhead" id="listHead" style="display:none">
+        <span class="cnt" id="fileCount"></span>
+        <button type="button" class="clear" id="clearAll">Remove all</button>
+      </div>
+      <div class="files" id="fileList"></div>
+    </div>
+
+    <label class="consent">
+      <input type="checkbox" id="consent" required>
+      <span>I confirm I took these photos and videos, or have the right to share them, and I grant Simabo the free, perpetual and worldwide right to use, edit and publish them — including on social media and for fundraising. I have read and accept the <a href="https://simabo.org/privacy-e-cookie-policy/" target="_blank" rel="noopener">Privacy Policy</a>. <span class="req">*</span></span>
+    </label>
+
+    <button type="submit" id="send" disabled>Upload</button>
+
+    <div class="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      <span>Do not close this page while uploading.</span>
+    </div>
+  </form>
+
+  <div class="done-msg card" id="doneMsg">
+    <svg id="doneIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    <h2 id="doneTitle">Done, thank you!</h2>
+    <p id="doneCount"></p>
+    <button type="button" id="again">Upload more files</button>
+  </div>
+</div>
+
+<script>
+  // === CONFIG =============================================================
+  // Production URL of the n8n webhook "Simabo - Drive Upload Session (resumable)"
+  const WEBHOOK_URL = 'https://n8n.gorillatribe.net/webhook/simabo-drive-session';
+  // ========================================================================
+
+  const $ = id => document.getElementById(id);
+  const firstEl = $('first'), lastEl = $('last'), typeEl = $('type'), filesEl = $('files');
+  const animalEl = $('animal'), animalRow = $('animalRow'), consentEl = $('consent');
+  const listEl = $('fileList'), listHead = $('listHead'), fileCount = $('fileCount');
+  const sendBtn = $('send'), form = $('form');
+  let selected = [];
+  let uploading = false;   // status + progress bar appear only once Upload is tapped
+
+  function clean(s){
+    return String(s || '')
+      .replace(/[\/\\:*?"<>|()\[\]]/g,'')   // drop filesystem-unsafe chars & our delimiters
+      .replace(/\s+/g,' ').trim();
+  }
+  function extOf(name){
+    const i = name.lastIndexOf('.');
+    return i > -1 ? name.slice(i).toLowerCase() : '';
+  }
+
+  // --- Client-side image optimization (videos are left untouched) ----------
+  const MAX_EDGE = 2560, JPEG_QUALITY = 0.85;
+
+  function isImage(f){ return (f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|heic|heif|webp|gif|bmp|tiff?)$/i.test(f.name); }
+  function isHeic(f){ return /image\/hei[cf]/i.test(f.type || '') || /\.(heic|heif)$/i.test(f.name); }
+
+  let heicLib = null;
+  function loadHeicLib(){
+    if(heicLib) return heicLib;
+    heicLib = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      s.onload = resolve; s.onerror = () => reject(new Error('heic lib'));
+      document.head.appendChild(s);
+    });
+    return heicLib;
+  }
+  function blobToImage(blob){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+      img.src = url;
+    });
+  }
+  // Returns a (possibly) smaller JPEG File. On any failure returns the original.
+  async function compressImage(file){
+    if(!isImage(file)) return file;                 // videos & other files: untouched
+    let src = file;
+    if(isHeic(file)){
+      await loadHeicLib();
+      const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: JPEG_QUALITY });
+      src = Array.isArray(out) ? out[0] : out;
+    }
+    const img = await blobToImage(src);
+    const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', JPEG_QUALITY));
+    if(!blob) return file;
+    const newName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
+  }
+  function refreshBtn(){
+    sendBtn.disabled = !(firstEl.value.trim() && lastEl.value.trim() && typeEl.value && selected.length && consentEl.checked);
+  }
+
+  function renderList(){
+    listEl.innerHTML = '';
+    selected.forEach((f, i) => {
+      const el = document.createElement('div');
+      el.className = 'file';
+      el.innerHTML =
+        '<div class="top"><span class="nm">'+ f.name +'</span>'+
+        (uploading ? '<span class="st wait" id="st'+i+'">waiting</span>' : '') + '</div>'+
+        (uploading ? '<div class="bar"><i id="bar'+i+'"></i></div>' : '');
+      listEl.appendChild(el);
+    });
+    const has = selected.length > 0;
+    listHead.style.display = has ? 'flex' : 'none';
+    fileCount.textContent = selected.length + (selected.length === 1 ? ' file selected' : ' files selected');
+  }
+
+  // Accumulate across multiple selections (do not replace previous ones)
+  filesEl.addEventListener('change', () => {
+    const incoming = Array.from(filesEl.files);
+    for(const f of incoming){
+      const key = f.name + '|' + f.size + '|' + f.lastModified;
+      const dup = selected.some(s => (s.name + '|' + s.size + '|' + s.lastModified) === key);
+      if(!dup) selected.push(f);
+    }
+    filesEl.value = '';           // reset so the same files can be picked again / add more
+    renderList(); refreshBtn();
+  });
+
+  $('clearAll').addEventListener('click', () => {
+    selected = [];
+    renderList(); refreshBtn();
+  });
+
+  firstEl.addEventListener('input', refreshBtn);
+  lastEl.addEventListener('input', refreshBtn);
+  consentEl.addEventListener('change', refreshBtn);
+  typeEl.addEventListener('change', () => {
+    const showAnimal = typeEl.value === 'dog' || typeEl.value === 'cat' || typeEl.value === 'adopted';
+    animalRow.style.display = showAnimal ? 'block' : 'none';
+    if(!showAnimal) animalEl.value = '';
+    refreshBtn();
+  });
+
+  function setStatus(i, cls, text){
+    const s = $('st'+i); if(s){ s.className = 'st '+cls; s.textContent = text; }
+  }
+  function setBar(i, pct, cls){
+    const b = $('bar'+i); if(b){ b.style.width = pct+'%'; if(cls) b.className = cls; }
+  }
+
+  // Errors tagged {kind:'server'} mean the n8n side answered but failed (non-2xx,
+  // bad JSON, no uploadUrl): the file was never sent to Google. Errors tagged
+  // {kind:'connection'} mean the request never completed at all — usually the
+  // phone losing signal mid-request. The final screen shows a different message
+  // for each, so a volunteer on a bad line is not told the service is broken.
+  function serverError(msg){ const e = new Error(msg); e.kind = 'server'; return e; }
+  function connectionError(msg){ const e = new Error(msg); e.kind = 'connection'; return e; }
+
+  async function getUploadUrl(fileName, mimeType){
+    let res;
+    try {
+      res = await fetch(WEBHOOK_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ fileName, mimeType })
+      });
+    } catch(e){ throw connectionError('network'); }    // request never got through
+    if(!res.ok) throw serverError('session '+res.status);
+    let data;
+    try { data = await res.json(); } catch(e){ throw serverError('bad response'); }
+    if(!data.uploadUrl) throw serverError('no uploadUrl');
+    return data.uploadUrl;
+  }
+
+  // Resolves as soon as all bytes are delivered to Google. Reading Google's
+  // response is often blocked by CORS on the upload endpoint, which is harmless:
+  // the file is already stored once the body has been fully sent.
+  function putFile(url, file, onProgress){
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let sent = false;
+      xhr.open('PUT', url, true);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.upload.onprogress = e => { if(e.lengthComputable) onProgress(e.loaded / e.total); };
+      xhr.upload.onload = () => { sent = true; };              // all bytes delivered
+      xhr.onload = () => {
+        if(xhr.status >= 200 && xhr.status < 300) resolve();
+        else if(sent) resolve();                               // stored despite unreadable status
+        else reject(new Error('put '+xhr.status));
+      };
+      xhr.onerror = () => { sent ? resolve() : reject(connectionError('network')); };
+      xhr.send(file);
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    sendBtn.disabled = true;
+    firstEl.disabled = lastEl.disabled = typeEl.disabled = animalEl.disabled = filesEl.disabled = consentEl.disabled = true;
+    $('clearAll').disabled = true;
+    uploading = true; renderList();
+
+    const isAnimal = typeEl.value === 'dog' || typeEl.value === 'cat' || typeEl.value === 'adopted';
+    const type = (typeEl.value || 'generic').toUpperCase();
+    const animal = isAnimal ? clean(animalEl.value) : '';
+    const person = clean(firstEl.value + ' ' + lastEl.value) || 'unknown';
+    const sessionCode = Math.random().toString(36).slice(2,6);
+    let okCount = 0, serverFailed = false, connectionFailed = false;
+
+    for(let i = 0; i < selected.length; i++){
+      const original = selected[i];
+      const code = sessionCode + '-' + String(i+1).padStart(3,'0');
+      try {
+        setStatus(i,'up','optimizing…'); setBar(i, 3);
+        let file = original;
+        try { file = await compressImage(original); } catch(e){ file = original; console.warn('compress skipped', original.name, e); }
+
+        let stem = type;
+        if(animal) stem += ' ' + animal;
+        stem += ' (' + person + ') [' + code + ']';
+        const finalName = stem + extOf(file.name);
+
+        setStatus(i,'up','preparing…'); setBar(i, 5);
+        const url = await getUploadUrl(finalName, file.type || 'application/octet-stream');
+        setStatus(i,'up','0%');
+        await putFile(url, file, p => {
+          const pct = Math.round(p*100);
+          setStatus(i,'up',pct+'%'); setBar(i, Math.max(5,pct));
+        });
+        setStatus(i,'done','ok'); setBar(i,100,'done'); okCount++;
+      } catch(err){
+        const kind = err && err.kind;
+        if(kind === 'server') serverFailed = true;
+        else if(kind === 'connection') connectionFailed = true;
+        setStatus(i,'fail', kind === 'server' ? 'service error' : kind === 'connection' ? 'no connection' : 'upload failed');
+        setBar(i,100,'fail');
+        console.error(original.name, err);
+      }
+    }
+
+    showOutcome(okCount, selected.length, serverFailed, connectionFailed);
+  });
+
+  const ICON_CHECK = '<path d="M20 6L9 17l-5-5"/>';
+  const ICON_ALERT = '<path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>';
+
+  // Final screen: success, partial, or failure. When nothing was saved, name the
+  // actual cause — service down vs. connection dropped — instead of "Done, thank you!".
+  function showOutcome(okCount, total, serverFailed, connectionFailed){
+    const box = $('doneMsg'), icon = $('doneIcon'), title = $('doneTitle'), msg = $('doneCount');
+    if(okCount === total){
+      box.classList.remove('is-error');
+      icon.innerHTML = ICON_CHECK;
+      title.textContent = 'Done, thank you!';
+      msg.textContent = total + (total === 1 ? ' file uploaded' : ' files uploaded');
+    } else if(okCount > 0){
+      box.classList.add('is-error');
+      icon.innerHTML = ICON_ALERT;
+      title.textContent = 'Some files did not upload';
+      msg.textContent = okCount + ' of ' + total + ' uploaded. Please try the failed ones again — you can re-select just those.';
+    } else {
+      box.classList.add('is-error');
+      icon.innerHTML = ICON_ALERT;
+      if(serverFailed){
+        title.textContent = 'Upload service unavailable';
+        msg.textContent = 'Nothing was saved — the upload service is not responding right now. Please try again in a few minutes. If it keeps failing, let Simabo know.';
+      } else if(connectionFailed){
+        title.textContent = 'Connection lost';
+        msg.textContent = 'Nothing was saved — your phone lost the connection before the files could be sent. Move to a spot with better signal or switch to Wi-Fi, then try again. If your connection is good and it keeps failing, let Simabo know.';
+      } else {
+        title.textContent = 'Upload failed';
+        msg.textContent = 'Nothing was uploaded. Please check your connection and try again.';
+      }
+    }
+    form.style.display = 'none';
+    box.style.display = 'block';
+  }
+
+  $('again').addEventListener('click', () => location.reload());
+
+  // When embedded in an iframe (e.g. a WordPress page), report our height so
+  // the parent can resize the iframe to fit the content (no inner scrollbar).
+  function reportHeight(){
+    const h = document.documentElement.scrollHeight;
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({ simaboUploadHeight: h }, '*');
+    }
+  }
+  window.addEventListener('load', reportHeight);
+  window.addEventListener('resize', reportHeight);
+  if(window.ResizeObserver) new ResizeObserver(reportHeight).observe(document.body);
+</script>
+</body>
+</html>
